@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+    - "8001:80"
+    networks:
+      - tracking-network
+    volumes:
+      - ./src:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+
+  mysql_tracking:
+    image: mysql:5.7.33
+    container_name: mysql_tracking
+    restart: unless-stopped
+    tty: true
+    environment:
+      MYSQL_DATABASE: tracking_api
+      MYSQL_USER: tracking
+      MYSQL_PASSWORD: 123456789
+      MYSQL_ROOT_PASSWORD: 123456789
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql_tracking
+    networks:
+      - tracking-network
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  api:
+    build: .
+    container_name: api
+    restart: unless-stopped
+    depends_on:
+      - mysql_tracking
+      - nginx
+    links:
+      - mysql_tracking
+    networks:
+      - tracking-network
+    volumes:
+      - ./src:/var/www
+
+networks:
+  tracking-network:
+    driver: bridge
+
+volumes:
+  dbdata:
