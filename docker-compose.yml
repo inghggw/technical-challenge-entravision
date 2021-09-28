@@ -29,12 +29,35 @@ services:
       - dbdata:/var/lib/mysql
 
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: php.dockerfile
     container_name: api
     restart: unless-stopped
     depends_on:
       - mysql_tracking
       - nginx
+    links:
+      - mysql_tracking
+    networks:
+      - tracking-network
+    volumes:
+      - ./src:/var/www
+
+  app:
+    build:
+      context: .
+      dockerfile: node.dockerfile
+    container_name: app
+    restart: unless-stopped
+    command: npm run dev
+    volumes:
+      - .:/usr/app/
+      - /usr/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql_tracking
     links:
       - mysql_tracking
     networks:
